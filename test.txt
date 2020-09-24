@@ -1,0 +1,186 @@
+ <!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc -->  
+<dependency>  
+    <groupId>org.springframework</groupId>  
+    <artifactId>spring-webmvc</artifactId>  
+    <version>5.1.1.RELEASE</version>  
+</dependency>  
+  
+<!-- https://mvnrepository.com/artifact/org.apache.tomcat/tomcat-jasper -->  
+<dependency>  
+    <groupId>org.apache.tomcat</groupId>  
+    <artifactId>tomcat-jasper</artifactId>  
+    <version>9.0.12</version>  
+</dependency>  
+    <!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->  
+<dependency>    
+    <groupId>javax.servlet</groupId>    
+    <artifactId>servlet-api</artifactId>    
+    <version>3.0-alpha-1</version>    
+</dependency>  
+<!-- https://mvnrepository.com/artifact/javax.servlet/jstl -->  
+<dependency>  
+    <groupId>javax.servlet</groupId>  
+    <artifactId>jstl</artifactId>  
+    <version>1.2</version>  
+</dependency>  
+    <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->  
+<dependency>  
+    <groupId>mysql</groupId>  
+    <artifactId>mysql-connector-java</artifactId>  
+    <version>8.0.11</version>  
+</dependency>  
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc -->  
+<dependency>  
+    <groupId>org.springframework</groupId>  
+    <artifactId>spring-jdbc</artifactId>  
+    <version>5.1.1.RELEASE</version>  
+</dependency>  
+
+
+
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+@Configuration
+@ComponentScan("com.demo")
+@PropertySource("classpath:database.properties")
+public class AppConfig {
+
+	@Autowired
+	Environment environment;
+
+	private final String URL = "url";
+	private final String USER = "dbuser";
+	private final String DRIVER = "driver";
+	private final String PASSWORD = "dbpassword";
+
+	@Bean
+	DataSource dataSource() {
+		DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource();
+		driverManagerDataSource.setUrl(environment.getProperty(URL));
+		driverManagerDataSource.setUsername(environment.getProperty(USER));
+		driverManagerDataSource.setPassword(environment.getProperty(PASSWORD));
+		driverManagerDataSource.setDriverClassName(environment.getProperty(DRIVER));
+		return driverManagerDataSource;
+	}
+}
+
+
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jndi.JndiTemplate;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.view.InternalResourceViewResolver;
+import org.springframework.web.servlet.view.JstlView;
+
+@Configuration
+@EnableWebMvc
+@ComponentScan(basePackages = { "com.jackrutorial" })
+public class WebConfig extends WebMvcConfigurerAdapter {
+ 
+ @Autowired
+ DataSource dataSource;
+ 
+ @Bean
+ public NamedParameterJdbcTemplate geNamedParameterJdbcTemplate(){
+  return new NamedParameterJdbcTemplate(dataSource);
+ }
+ 
+ @Bean
+ public DataSource getDataSource() throws NamingException{
+  JndiTemplate jndiTemplate = new JndiTemplate();
+  DataSource dataSource = (DataSource) jndiTemplate.lookup("java:comp/env/jdbc/springmvc");
+  
+  return dataSource;
+ }
+ 
+ @Override
+ public void addResourceHandlers(ResourceHandlerRegistry registry) {
+  registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
+ }
+ 
+ @Bean
+ public InternalResourceViewResolver viewResolver(){
+  InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
+  viewResolver.setViewClass(JstlView.class);
+  viewResolver.setPrefix("/WEB-INF/jsp/");
+  viewResolver.setSuffix(".jsp");
+  
+  return viewResolver;
+ }
+}
+
+
+
+---------------------------
+import javax.sql.DataSource;
+ 
+import net.codejava.spring.dao.ContactDAO;
+import net.codejava.spring.dao.ContactDAOImpl;
+ 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.web.servlet.ViewResolver;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.view.InternalResourceViewResolver;
+ 
+@Configuration
+@ComponentScan(basePackages="com.demo")
+@EnableWebMvc
+public class MvcConfiguration extends WebMvcConfigurerAdapter{
+ 
+    @Bean
+    public ViewResolver getViewResolver(){
+        InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+        resolver.setPrefix("/WEB-INF/views/");
+        resolver.setSuffix(".jsp");
+        return resolver;
+    }
+     
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
+    }
+ 
+    @Bean
+    public DataSource getDataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        dataSource.setUrl("jdbc:mysql://localhost:3306/test");
+        dataSource.setUsername("root");
+        dataSource.setPassword("root123");
+         
+        return dataSource;
+    }
+	@Bean
+    public JdbcTemplate getJdbcTemplate() {
+	JdbcTemplate jdbcTemplate=new JdbcTemplate();
+	 jdbcTemplate.setDataSource(getDataSource())
+        return jdbcTemplate;
+    }
+     
+    @Bean
+    public ContactDAO getContactDAO() {
+        return new ContactDAOImpl(getJdbcTemplate());
+    }
+}
