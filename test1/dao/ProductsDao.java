@@ -12,11 +12,9 @@ import java.util.TreeSet;
 import com.hsbc.test1.model.*;
 
 public class ProductsDao implements ProductsDaoIntf{
-	//storing treeset of products in hashmap
-	//to get idea about the product type while retrieving data.
-	//Couldnt finish in time so creating three different sets for different classes
-	//main idea was to create a hashmap of set of products.
-	HashMap<String, Set<Product>> n=new HashMap<String, Set<Product>>();
+	//wanted to use list of products
+	//took time to dynamically find the class 
+	//hence used separated treesets
 	
 	Set<FoodItems> food=new TreeSet<>();
 	Set<Apparel> apparel=new TreeSet<>();
